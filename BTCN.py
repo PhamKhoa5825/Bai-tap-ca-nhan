@@ -13,7 +13,7 @@ class ChessSolver:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("Giao dien Place N Rooks")
-        self.root.geometry("1100x800")
+        self.root.geometry("1200x800")
 
         # Khởi tạo các biến trạng thái
         self.size = 8
@@ -26,7 +26,7 @@ class ChessSolver:
         self.dfsPosition = [(0, 0), (7, 1), (6, 2), (5, 3), (4, 4), (3, 5), (2, 6), (1, 7)]
         self.costLabel = None
         self.currentCost = 0
-        self.speed = 0.02
+        self.speed = 0.09
 
         # Khởi tạo UI
         self.setupUI()
@@ -150,6 +150,11 @@ class ChessSolver:
                                     font=("Arial", 14, "bold"), command=self.stop)
         self.stopButton.pack(side="left", padx=5)
 
+        # Nút ClearLog
+        self.clearLogButton = tk.Button(self.btnFrame, text="Clear Log", bg="white", fg="black",
+                                       font=("Arial", 10, "bold"), command=self.clearLog)
+        self.clearLogButton.pack(side="left", padx=5)
+
     def createLogPanel(self):
         # Tạo khung log ở dưới cùng
         self.logFrame = tk.Frame(self.root, bg="white")
@@ -265,7 +270,7 @@ class ChessSolver:
         for r, c in state:
             for (a, b) in self.bfsPosition:
                 if c == b:
-                    costValue += abs(a - r) + abs(b - c)
+                    costValue += abs(a - r) + abs(b - c) + max(abs(a - r), abs(b - c))
 
         n = len(self.currentPositions)
         if len(state) < n:
@@ -278,7 +283,8 @@ class ChessSolver:
         costValue = 0
         for (r, c) in state:
             for (a, b) in self.currentPositions:
-                costValue += abs(a - r) + abs(b - c)
+                x, y  = abs(a - r), abs(b - c)
+                costValue += x + y
         return costValue
 
     def costChebyshev(self, state):
@@ -306,6 +312,7 @@ class ChessSolver:
         self.costLabel.configure(fg=color)
 
     def controlSolution(self):
+        self.currentPositions.sort(key=lambda x: x[0])
         # Cập nhật theo thuật toán được chọn
         if self.tt.get() == "BFS":
             self.bfsdfsSolution()
@@ -439,9 +446,9 @@ class ChessSolver:
                 print("---------------------------------------------------------------")
                 print("Found solution:", state, costValue, sep=": ")
                 [print("Visited: ", a) for a in visited]
-                self.addLog(f"found solution: {state}")
+                self.addLog(f"Found solution: {state}")
                 self.addLog(f"Cost: {costValue} | Visited: {len(visited)}")
-                break
+                return
 
             # Bỏ qua nếu đã thăm
             if tuple(state) in visited:
@@ -1954,14 +1961,6 @@ class ChessSolver:
         self.currentChess = [(r, c) for r, c in state if r is not None and c is not None]
         for (r, c) in self.currentChess:
             self.leftButton[r][c].configure(text='♜', fg='red')
-
-    def isSafe(self, state):
-        # Kiểm tra vị trí an toàn
-        for (r, c) in state:
-            if (c == next_col or
-                    abs(r - next_row) == abs(c - next_col)):
-                return False
-        return True
 
     def run(self):
         self.root.mainloop()

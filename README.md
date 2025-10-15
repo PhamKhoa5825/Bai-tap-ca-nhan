@@ -67,8 +67,8 @@ def andOrSearchSolution_DFS(self):
 def orSearch(self, state, path):
 def andSearch(self, states, path):
 Giải quyết bài toán Non-Deterministic (không xác định) hoặc Conditional Planning (lập kế hoạch có điều kiện).
-•	OR-Search (Hàm orSearch(state, path)): Đại diện cho điểm lựa chọn hành động. Hàm này thành công khi ít nhất một hành động thành công. Nếu có chu trình thì trả về failure.  Gọi hàm getAction(state) để lấy tất cả hành động có thể thực hiện từ state hiện tại. Gọi hàm getResults(state, action) để thực hiện hành động và lấy các state kết quả (1 action  1 outcome). Hoặc trong trường hợp non-deterministic, gọi hàm getNonDeterministicResults(state, action) để 1 action có nhiều outcomes. Gọi hàm andSearch để tiếp tục tìm kết quả theo cây And – Or.
-•	AND-Search (Hàm andSearch): Đại diện cho các kết quả có thể của một hành động (Outcome). Cần đảm bảo tất cả các outcome đều dẫn đến một kế hoạch thành công.
+	+ OR-Search (Hàm orSearch(state, path)): Đại diện cho điểm lựa chọn hành động. Hàm này thành công khi ít nhất một hành động thành công. Nếu có chu trình thì trả về failure.  Gọi hàm getAction(state) để lấy tất cả hành động có thể thực hiện từ state hiện tại. Gọi hàm getResults(state, action) để thực hiện hành động và lấy các state kết quả (1 action  1 outcome). Hoặc trong trường hợp non-deterministic, gọi hàm getNonDeterministicResults(state, action) để 1 action có nhiều outcomes. Gọi hàm andSearch để tiếp tục tìm kết quả theo cây And – Or.
+    + AND-Search (Hàm andSearch): Đại diện cho các kết quả có thể của một hành động (Outcome). Cần đảm bảo tất cả các outcome đều dẫn đến một kế hoạch thành công.
 Sử dụng DFS để duyệt cây AND-OR.
 Dùng isGoalState(state) kiểm tra 8 quân xe khớp với currentPositions.
 
