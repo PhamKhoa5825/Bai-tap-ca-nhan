@@ -129,7 +129,8 @@ class ChessSolver:
         choiceAgorithm = ["BFS", "DFS", "UCS", "DLS", "IDS",
                           "Greedy Search", "A* Search",
                           "Hill Climbing", "Simulated Annealing", "Beam Search", "Genetic Algorithm",
-                          "Recursive AND-OR Tree Search (DFS)", "BFS No Observation With Beliefs", "BFS Partial Observation With Beliefs",
+                          "Recursive AND-OR Tree Search (DFS)", "Recursive AND-OR Tree Search (DFS) -- Non-Deterministic"
+                          "BFS No Observation With Beliefs", "BFS Partial Observation With Beliefs",
                           "CSP", "CSP-AC3"]
         self.tt = tk.StringVar()
         self.choiceBox = ttk.Combobox(self.btnFrame, values=choiceAgorithm,
@@ -264,7 +265,7 @@ class ChessSolver:
         for r, c in state:
             for (a, b) in self.bfsPosition:
                 if c == b:
-                    costValue += abs(a - r)
+                    costValue += abs(a - r) + abs(b - c)
 
         n = len(self.currentPositions)
         if len(state) < n:
@@ -329,6 +330,8 @@ class ChessSolver:
         elif self.tt.get() == "Genetic Algorithm":
             self.geneticAlgorithm()
         elif self.tt.get() == "Recursive AND-OR Tree Search (DFS)":
+            self.andOrSearchSolution_DFS()
+        elif self.tt.get() == "Recursive AND-OR Tree Search (DFS) -- Non-Deterministic":
             self.andOrSearchSolution_DFS()
         elif self.tt.get() == "BFS No Observation With Beliefs":
             self.bfsNoObservationWithBeliefs()
@@ -455,7 +458,7 @@ class ChessSolver:
                     newList.sort(key=lambda x: x[0])  # sắp xếp list theo hàng
                     newState = tuple(newList)
 
-                    if tuple(newState) not in visited or newState not in inFrontier(state, q):
+                    if tuple(newState) not in visited or newState not in self.inFrontier(state, q):
                         newCost = self.cost(newState)
                         newPathCost = costValue + newCost
                         heapq.heappush(q, (newPathCost, newState))
@@ -741,6 +744,11 @@ class ChessSolver:
         while not self.stopFlag and current_cost > 0:
             # Tìm successor tốt nhất
             best_state, best_cost = self.getBestRookSuccessor(current)
+
+            # Nếu đạt Goal State --> Dừng
+            if best_state == self.currentPositions:
+                print(f"Found solution: {best_state}")
+                self.addLog(f"Found solution: {best_state}")
 
             # Nếu không tìm được state tốt hơn -> dừng
             if best_cost >= current_cost:
@@ -1156,7 +1164,10 @@ class ChessSolver:
                 return "failure"
 
             # Thực hiện hành động và lấy tất cả kết quả có thể
-            resultStates = self.getResults(state, action)
+            if self.tt.get == "Recursive AND-OR Tree Search (DFS)":
+                resultStates = self.getResults(state, action)
+            else:
+                resultStates = self.getNonDeterministicResults(state, action)
 
             # AND-SEARCH cho tất cả kết quả có thể của hành động này
             plan = self.andSearch(resultStates, path + [state])
@@ -1346,9 +1357,10 @@ class ChessSolver:
                             print(f"      {s}")'''
 
                         print("   Resulting new states:")
-                        self.addLog(f"Resulting belief states: {newBelief}")
+                        self.addLog(f"Resulting belief states")
                         for s in newBelief:
                             print(f"      {s}")
+                            self.addLog(f"    {s}")
 
         if self.stopFlag == True:
             print("Stopped by user")
@@ -1426,9 +1438,11 @@ class ChessSolver:
                     queue.append((newBelief, newActionHistory))
 
                     print(f"   Action: {action[0]} → belief size: {len(newBelief)}")
-                    self.addLog(f"   Action: {action[0]} → belief: {newBelief}")
+                    self.addLog(f"   Action: {action[0]} → belief size: {len(newBelief)}")
+                    self.addLog(f"Belief:")
                     for s in newBelief:
                         print(f"      {s}")
+                        self.addLog(f"    {s}")
         if self.stopFlag == True:
             print("Stopped by user")
             self.addLog(f"Stopped by user")
@@ -1473,30 +1487,31 @@ class ChessSolver:
         Actions:
         1. PLACE: Đặt quân mới ở vị trí (r, c)
         2. MOVE: Di chuyển quân từ (r1, c1) đến (r2, c2)
+        Return 1 action Place và 1 action Move
         """
         actions = []
 
-        # ACTION 1: PLACE
+        # ACTION 1: PLACE - chỉ lấy 1 action đầu tiên
         if len(currentPieces) < 8:
             rows = {r for (r, c) in currentPieces}
             cols = {c for (r, c) in currentPieces}
-
+            
+            found = False
             for r in range(8):
                 if r not in rows:
-                    found = False
                     for c in range(8):
                         if c not in cols:
                             # Kiểm tra position hợp lệ (không bị tấn công)
                             if self.isValidPlacement(currentPieces, (r, c)):
                                 actions.append(('PLACE', (r, c)))
                                 found = True
+                                break
                     if found:
                         break # lấy hàng đầu tiên hợp lệ
 
-        # ACTION 2: MOVE
+        # ACTION 2: MOVE - chỉ lấy 1 action đầu tiên
+        moveFound = False
         for piece_pos in currentPieces:
-            from_r, from_c = piece_pos
-
             if (self.tt.get() == "BFS Partial Observation With Beliefs"):
                 # Không di chuyển quân mục tiêu nhìn thấy được 1 phần
                 if (piece_pos in self.currentPositions):
@@ -1512,6 +1527,13 @@ class ChessSolver:
                             to_pos not in currentPieces and
                             self.isValidMove(currentPieces, piece_pos, to_pos)):
                         actions.append(('MOVE', piece_pos, to_pos))
+                        moveFound = True
+                        break
+                if moveFound:
+                    break
+            if moveFound:
+                break
+            
 
         return actions
 
@@ -1519,13 +1541,18 @@ class ChessSolver:
         """
         Sinh 2 loại action cho belief:
         1. PLACE: mỗi state trong belief thử place thêm quân -> tập belief mới
+            - Mỗi state tìm 1 vị trí place riêng
+            - Nếu state nào không place được thì bỏ qua
         2. MOVE: mỗi state trong belief thử move quân -> tập belief mới
+            - Mỗi state tìm 1 vị trí move riêng
+            - Không move nếu state đã đạt goal
         """
         actions = []
 
         # ACTION 1: PLACE
         placeBelief = set()
         for state in currentBelief:
+            found = False
             if len(state) < 8:
                 rows = {r for (r, c) in state}
                 cols = {c for (r, c) in state}
@@ -1535,16 +1562,24 @@ class ChessSolver:
                             if c not in cols and self.isValidPlacement(state, (r, c)):
                                 newState = tuple(sorted(list(state) + [(r, c)]))
                                 placeBelief.add(newState)
-                        break  # chỉ lấy hàng đầu tiên hợp lệ
+                                found = True
+                                break
+                        if found:
+                            break 
         if placeBelief:
             actions.append(("PLACE", frozenset(placeBelief)))
 
         # ACTION 2: MOVE
         moveBelief = set()
         for state in currentBelief:
+            # Không move nếu state đã đạt goal
+            if self.isGoalBelief2(state):
+                continue
+            moveFound = False
             for from_pos in state:
                 if from_pos in self.currentPositions:  # không move quân nhìn thấy
                     continue
+
                 from_r, from_c = from_pos
                 for to_r in range(8):
                     for to_c in range(8):
@@ -1557,6 +1592,10 @@ class ChessSolver:
                             newStateList.append(to_pos)
                             newState = tuple(sorted(newStateList))
                             moveBelief.add(newState)
+                            moveFound = True
+                            break
+                    if moveFound:
+                        break
         if moveBelief:
             actions.append(("MOVE", frozenset(moveBelief)))
 
