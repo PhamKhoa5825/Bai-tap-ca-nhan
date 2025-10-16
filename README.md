@@ -2,6 +2,8 @@
 Họ tên sinh viên: Phạm Nguyễn Đăng Khoa
 MSSV: 23110117
 
+Link file PDF: [gif/baocao.pdf](https://github.com/PhamKhoa5825/Bai-tap-ca-nhan/blob/main/gif/baocao.pdf)
+Hoặc xem trực tiếp bên dưới:
 
 CÁC NHÓM THUẬT TOÁN TÌM KIẾM
 **----- Uninformed Search-----------------------------------------------------------------------------------
