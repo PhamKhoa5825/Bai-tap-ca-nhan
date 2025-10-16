@@ -4,8 +4,8 @@ MSSV: 23110117
 
 
 CÁC NHÓM THUẬT TOÁN TÌM KIẾM
------ Uninformed Search-----------------------------------------------------------------------------------
---BFS (Breadth-First Search) và DFS (Depth-First Search)--
+**----- Uninformed Search-----------------------------------------------------------------------------------
+--BFS (Breadth-First Search) và DFS (Depth-First Search)--**
 def bfsdfsSolution(self):
 Là hàm tìm kiếm chung cho cả BFS và DFS để tìm đường đi từ trạng thái hiện tại, mở rộng bằng cách đặt thêm một quân vào vị trí hàng-cột trống. Lưu vị trí một ô bằng cặp (row,col).
 + BFS: Duyệt các trạng thái theo chiều rộng, sử dụng hàng đợi (queue) (gọi popleft() để chọn trạng thái tiếp theo)
@@ -15,7 +15,7 @@ Là hàm tìm kiếm chung cho cả BFS và DFS để tìm đường đi từ tr
 
 ![DFS Image](gif/dfs.gif)
 
--- UCS (Uniform-Cost Search)--
+**-- UCS (Uniform-Cost Search)--**
 def ucsSolution(self):
 Sử dụng hàng đợi ưu tiên (Priority Queue) để luôn mở rộng trạng thái có chi phí đường đi (g(n)) thấp nhất.
 + Chi phí được tính bằng hàm self.cost(state): Tổng số lượng trạng thái còn thiếu (nếu chưa đủ N=8 quân) cộng với khoảng cách Manhattan.
@@ -23,7 +23,7 @@ Sử dụng hàng đợi ưu tiên (Priority Queue) để luôn mở rộng tr�
 
 ![UCS Image](gif/ucs.gif)
 
---DLS (Depth-Limited Search) và IDS (Iterative Deepening Search)--
+**--DLS (Depth-Limited Search) và IDS (Iterative Deepening Search)--**
 def dlsSolution(self, limit=8):
 def recursiveDLS(self, state, visited, limit, depth):
 def idsSolution(self, maxDepth = 20):
@@ -34,14 +34,14 @@ IDS: Gọi lặp lại dlsSolution với giới hạn độ sâu tăng dần t�
 
 ![IDL Image](gif/idl.gif)
 
---- Informed Search-----------------------------------------------------------------------------------------
---Greedy Search--
+**--- Informed Search-----------------------------------------------------------------------------------------
+--Greedy Search--**
 def greedySolution(self):
 Sử dụng hàng đợi ưu tiên (Priority Queue) để mở rộng trạng thái có chi phí heuristic (h(n)) thấp nhất. Heuristic h(n) được tính bằng hàm costMahattan(state): Tổng khoảng cách Manhattan giữa tất cả quân xe hiện tại và tất cả quân xe mục tiêu. Khoảng cách Manhattan giữa hai vị trí (r1,c1) và (r2,c2) là ∣r1−r2∣+∣c1−c2∣.
 
 ![Greedy Image](gif/greedy.gif)
 
--- A* Search--
+**-- A* Search--**
 def aStarSolution(self):
 Sử dụng hàng đợi ưu tiên (Priority Queue) để mở rộng trạng thái có tổng chi phí f(n)=g(n)+h(n) thấp nhất.
 + Chi phí đường đi (g(n)) được tính bằng cost(state) (chi phí để đạt đến trạng thái hiện tại).
@@ -49,8 +49,8 @@ Sử dụng hàng đợi ưu tiên (Priority Queue) để mở rộng trạng th
 
 ![Astart Image](gif/astart.gif)
 
----Local Search (Tìm kiếm cục bộ)----------------------------------------------------------------------
--- Hill Climbing--
+**---Local Search (Tìm kiếm cục bộ)----------------------------------------------------------------------
+-- Hill Climbing--**
 def hillClimbing(self):
 def getBestRookSuccessor(self, state):
 Bắt đầu từ một trạng thái ngẫu nhiên, gọi hàm getBestRookSuccessor để tìm trạng thái lân cận tốt nhất. Hàm này di chuyển một quân trong trạng thái hiện tại để tạo thành trạng thái mới và đánh giá bằng hàm heuristic costChebyshev(state). Sau đó chọn trạng thái có chi phí thấp nhất.
@@ -59,7 +59,7 @@ Kiểm tra trạng thái mới có tốt hơn trạng thái hiện tại hay kh�
 
 ![Hill Image](gif/hill.gif)
 
--- Simulated Annealing --
+**-- Simulated Annealing --**
 def simulatedAnnealing(self):
 Giống Hill Climbing, nhưng cho phép di chuyển đến trạng thái tệ hơn (chi phí cao hơn) với một xác suất e−ΔE/T.
 + ΔE: Sự khác biệt chi phí giữa trạng thái tiếp theo và trạng thái hiện tại.
@@ -69,13 +69,13 @@ Chi phí được đánh giá dựa trên costChebyshev(state) và countRookConf
 
 ![Simulated Image](gif/simulated.gif)
 
--- Beam Search--
+**-- Beam Search--**
 def beamSearch(self):
 Duyệt qua các cấp độ trạng thái như BFS, nhưng ở mỗi cấp độ chỉ giữ lại k trạng thái tốt nhất (beam width) để mở rộng ở cấp độ tiếp theo. Sử dụng heuristic costChebyshev(x) để đánh giá và chọn k trạng thái tốt nhất.
 
 ![Beam Image](gif/beam.gif)
 
---Genetic Algorithm--
+**--Genetic Algorithm--**
 def geneticAlgorithm(self, maxGenerations=100, 
 populationSize=10, mutationRate=0.2):
 Tham số: maxGenerations – số thế hệ tối đa, populationSize – kích thước quần thể, mutationRate – tỉ lệ đột biến. 
@@ -89,8 +89,8 @@ Duy trì kích thước quần thể cố định bằng cách chỉ giữ lại
 
 ![Genetic Image](gif/genetic.gif)
 
---Advanced Search-----------------------------------------------------------------------------------------
---Recursive AND-OR Tree Search (DFS)--
+**--Advanced Search-----------------------------------------------------------------------------------------
+--Recursive AND-OR Tree Search (DFS)--**
 def andOrSearchSolution_DFS(self):
 def orSearch(self, state, path):
 def andSearch(self, states, path):
@@ -104,20 +104,20 @@ Dùng isGoalState(state) kiểm tra 8 quân xe khớp với currentPositions.
 
 ![Andor2 Image](gif/andor2.gif)
 
--- BFS No Observation With Beliefs--
+**-- BFS No Observation With Beliefs--**
 def bfsNoObservationWithBeliefs(self):
 Tìm kiếm trong môi trường không nhìn thấy hay không gian niềm tin (Belief Space), là nơi mà trạng thái hiện tại là một tập hợp các trạng thái thực tế có thể xảy ra gọi là trạng thái niềm tin (Belief State). Hàm này hoạt động như BFS: ta lấy 1 state ra khỏi queue, kiểm tra goal state, sinh state mới từ state hiện tại bằng cách thực hiện hành động  rồi đưa vào queue. Nhưng ở đây thay vì state thì nó là belief state, hành động là tập hành động có thể thực hiện. Gọi hàm getAllPossibleActions(currentPieces) để lấy tập hành động có thể thực hiện. Khi thực hiện một hành động, do không có quan sát được, Belief state mới được sinh ra bằng cách áp dụng hành động đó cho tất cả các state trong belief (bằng cách gọi hàm executeActionBlindly(current_pieces, action) cho từng state trong belief). Hàm này đạt goal khi tất cả các state trong belief state đều đạt goal state.
 
 ![BFS_NO Image](gif/bfs_no.gif)
 
---BFS Partial Observation With Beliefs--
+**--BFS Partial Observation With Beliefs--**
 def bfsPartialObservationWithBeliefs(self):
 Giống với BFS No Observation With Beliefs, nhưng quan sát được một phần của goal state. (ví dụ: 1 vị trí quân xe mục tiêu). Nên trong tập hành động, không được thay đổi phần quan sát được. 
 
 ![BFS_PART Image](gif/bfs_part.gif)
 
----Constraint Satisfaction Problems (CSP)-----------------------------------------------------------
---CSP (Backtracking Search với Forward Checking)--
+**---Constraint Satisfaction Problems (CSP)-----------------------------------------------------------
+--CSP (Backtracking Search với Forward Checking)--**
 def cspSolution(self):
 Giải quyết bài toán bằng cách gán giá trị cho từng biến (quân xe).
 Sử dụng Backtracking cơ bản kết hợp với Forward Checking (hàm forwardCheck) để loại bỏ các giá trị không khả thi khỏi domain của các biến chưa được gán ngay sau khi một biến được gán.
@@ -125,7 +125,7 @@ Sử dụng chọn ngẫu nhiên biến và giá trị.
 
 ![CSP Image](gif/csp.gif)
 
---CSP-AC3 (Backtracking Search với AC-3)--
+**--CSP-AC3 (Backtracking Search với AC-3)--**
 def cspSolutionAC3(self):
 Giải quyết bài toán bằng cách sử dụng thuật toán Arc Consistency 3 (AC-3) để thu hẹp domain của các biến, sau đó dùng Backtracking.
 + AC-3: Duy trì tính nhất quán cung (Arc Consistency) giữa các cặp biến. Nó loại bỏ các giá trị không nhất quán khỏi domain.
