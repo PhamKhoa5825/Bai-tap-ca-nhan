@@ -264,8 +264,20 @@ class ChessSolver:
     def stop(self):
         self.stopFlag = True
 
-    def cost(self, state):
-        # Tính chi phí
+    def cost(self, prevState, state):
+        costValue = 0
+        added = set(state) - set(prevState)
+
+        if not added:
+            return 0
+        
+        (r, c) = list(added)[0]
+        for (a, b) in prevState:
+            costValue += abs(a - r) + abs(b - c) + max(abs(a - r), abs(b - c))
+
+        return costValue
+        
+        '''# Tính chi phí
         costValue = 0
         for r, c in state:
             for (a, b) in self.bfsPosition:
@@ -276,7 +288,7 @@ class ChessSolver:
         if len(state) < n:
             costValue += n - len(state)
 
-        return costValue
+        return costValue'''
 
     def costMahattan(self, state):
         # chi phí càng thấp càng tốt
@@ -427,7 +439,7 @@ class ChessSolver:
             self.currentChess.append((0, 0))
 
         start = tuple(self.currentChess)
-        pathCost = self.cost(start)
+        pathCost = 0                            # ban đầu cost=0
         heapq.heappush(q, (pathCost, start))  # (chi phí, state)
         self.addLog(f"Bắt đầu UCS từ {start} với cost={pathCost}")
 
@@ -465,20 +477,22 @@ class ChessSolver:
                     newList.sort(key=lambda x: x[0])  # sắp xếp list theo hàng
                     newState = tuple(newList)
 
-                    if tuple(newState) not in visited or newState not in self.inFrontier(state, q):
-                        newCost = self.cost(newState)
+                    if tuple(newState) not in visited or not self.inFrontier(newState, q):
+                        newCost = self.cost(state, newState)
                         newPathCost = costValue + newCost
                         heapq.heappush(q, (newPathCost, newState))
 
                     # Nếu có trong q với PATH-COST cao hơn thì thay thế
-                    elif self.replaceIfBetter(newState, self.cost(newState) + costValue, q):
+                    
+                    elif self.replaceIfBetter(newState, self.cost(state, newState) + costValue, q):
                         # Xóa state cũ trong q (tìm và xóa chính xác)
                         q_temp = []
                         replaced = False
                         for cost_item, state_item in q:
-                            if state_item == newState and cost_item > costValue + self.cost(newState):
+                            ncost = costValue + self.cost(state, newState)
+                            if state_item == newState and cost_item > ncost:
                                 if not replaced:
-                                    q_temp.append((costValue + self.cost(newState), newState))
+                                    q_temp.append((ncost, newState))
                                     replaced = True
                             else:
                                 q_temp.append((cost_item, state_item))
