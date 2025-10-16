@@ -7,6 +7,7 @@ import random
 import math
 import heapq
 import numpy as np
+from functools import lru_cache
 
 
 class ChessSolver:
@@ -26,7 +27,8 @@ class ChessSolver:
         self.dfsPosition = [(0, 0), (7, 1), (6, 2), (5, 3), (4, 4), (3, 5), (2, 6), (1, 7)]
         self.costLabel = None
         self.currentCost = 0
-        self.speed = 0.09
+        self.speed = 0.05
+        self.goalFound = False
 
         # Khởi tạo UI
         self.setupUI()
@@ -129,7 +131,7 @@ class ChessSolver:
         choiceAgorithm = ["BFS", "DFS", "UCS", "DLS", "IDS",
                           "Greedy Search", "A* Search",
                           "Hill Climbing", "Simulated Annealing", "Beam Search", "Genetic Algorithm",
-                          "Recursive AND-OR Tree Search (DFS)", "Recursive AND-OR Tree Search (DFS) -- Non-Deterministic"
+                          "Recursive AND-OR Tree Search (DFS)", "Recursive AND-OR Tree Search (DFS) -- Non-Deterministic",
                           "BFS No Observation With Beliefs", "BFS Partial Observation With Beliefs",
                           "CSP", "CSP-AC3"]
         self.tt = tk.StringVar()
@@ -228,13 +230,6 @@ class ChessSolver:
             self.costLabel.configure(text="0", fg="green")
 
     def updateRB(self, event=None):
-        # Cập nhật bàn cờ mục tiêu khi chọn thuật toán
-        # Reset bàn cờ phải
-        self.currentPositions = []
-        for i in range(8):
-            for j in range(8):
-                self.rightButton[i][j].configure(text=' ', fg='red')
-
         # Cập nhật theo thuật toán được chọn
         if self.tt.get() == "BFS":
             self.currentPositions = self.bfsPosition
@@ -252,12 +247,15 @@ class ChessSolver:
             self.currentPositions = self.bfsPosition
         elif self.tt.get() == "Simulated Annealing":
             self.currentPositions = self.bfsPosition
-        else:
-            self.currentPositions = []
-
 
         self.currentPositions.sort(key=lambda x: x[0])
-        # Cập nhật lại bàn cờ trái
+        # Cập nhật bàn cờ mục tiêu khi chọn thuật toán
+        # Reset bàn cờ phải
+        for i in range(8):
+            for j in range(8):
+                self.rightButton[i][j].configure(text=' ', fg='red')
+
+        # Cập nhật lại bàn cờ phải
         for (r, c) in self.currentPositions:
             self.rightButton[r][c].configure(text='♜', fg='red')
 
@@ -271,32 +269,26 @@ class ChessSolver:
         if not added:
             return 0
         
-        (r, c) = list(added)[0]
-        for (a, b) in prevState:
-            costValue += abs(a - r) + abs(b - c) + max(abs(a - r), abs(b - c))
+        (r, c) = added.pop()
+        (a, b) = prevState[-1]  # rook gần nhất (vừa thêm trước đó)
+        costValue = abs(a - r) + abs(b - c) + max(abs(a - r), abs(b - c))
 
         return costValue
-        
-        '''# Tính chi phí
-        costValue = 0
-        for r, c in state:
-            for (a, b) in self.bfsPosition:
-                if c == b:
-                    costValue += abs(a - r) + abs(b - c) + max(abs(a - r), abs(b - c))
-
-        n = len(self.currentPositions)
-        if len(state) < n:
-            costValue += n - len(state)
-
-        return costValue'''
 
     def costMahattan(self, state):
+        if len(state) >= len(self.currentPositions):
+            return 0
+        
         # chi phí càng thấp càng tốt
         costValue = 0
-        for (r, c) in state:
-            for (a, b) in self.currentPositions:
-                x, y  = abs(a - r), abs(b - c)
-                costValue += x + y
+        for i in range(len(state), len(self.currentPositions)):
+            pr, pc = self.currentPositions[i]
+            
+            if state:
+                r, c = state[-1]
+                x, y = abs(pr - r), abs(pc - c)
+                costValue += x + y + max(x, y)*2
+
         return costValue
 
     def costChebyshev(self, state):
@@ -433,6 +425,7 @@ class ChessSolver:
 
         q = []
         visited = set()
+        inFrontier = {} # {state: cost}
 
         # Mặc định ô đầu tiên là (0,0)
         if not self.currentChess:
@@ -441,63 +434,62 @@ class ChessSolver:
         start = tuple(self.currentChess)
         pathCost = 0                            # ban đầu cost=0
         heapq.heappush(q, (pathCost, start))  # (chi phí, state)
+        inFrontier[start] = 0
         self.addLog(f"Bắt đầu UCS từ {start} với cost={pathCost}")
 
         while q and not self.stopFlag:
             # Chọn state tiếp theo theo thuật toán
             # Lấy state có cost nhỏ nhất
             costValue, state = heapq.heappop(q)
-            state = list(state)
+            # Lazy deletion: bỏ qua state cũ có có cost lớn
+            if state not in inFrontier:
+                continue
+            if costValue > inFrontier[state]:
+                continue
+            
+                
+            inFrontier.pop(state, None)
 
             self.updateDisplay(state)
+            if len(q) % 100 == 0:
+                print(f"Queue size: {len(q)}, Visited: {len(visited)}, Frontier: {len(inFrontier)}")
+                self.addLog(f"Queue size: {len(q)}, Visited: {len(visited)}, Frontier: {len(inFrontier)}")
 
-            rows = [r for (r, c) in state]
-            cols = [c for (r, c) in state]
             # Kiểm tra có phải goal state
-            if len(set(rows)) == 8 and len(set(cols)) == 8 and list(state) == self.currentPositions:
+            if list(state) == self.currentPositions:
                 print("---------------------------------------------------------------")
                 print("Found solution:", state, costValue, sep=": ")
                 [print("Visited: ", a) for a in visited]
                 self.addLog(f"Found solution: {state}")
                 self.addLog(f"Cost: {costValue} | Visited: {len(visited)}")
                 return
-
-            # Bỏ qua nếu đã thăm
-            if tuple(state) in visited:
+            
+            if len(start) >= 8:
                 continue
             # Đánh dấu state đã thăm
-            visited.add(tuple(state))
+            visited.add(state)
 
-
+            rows = [r for (r, c) in state]
+            cols = [c for (r, c) in state]
             nextCols = [i for i in range(8) if i not in cols]
-            nextRows = [i for i in range(8) if i not in rows]
+            nextRows = [i for i in range(8) if i not in rows][0:1]
             for i in nextRows:
                 for j in nextCols:
                     newList = list(state) + [(i, j)]
                     newList.sort(key=lambda x: x[0])  # sắp xếp list theo hàng
                     newState = tuple(newList)
+                    newCost = self.cost(state, newState)
+                    newPathCost = costValue + newCost
 
-                    if tuple(newState) not in visited or not self.inFrontier(newState, q):
-                        newCost = self.cost(state, newState)
-                        newPathCost = costValue + newCost
+                    if newState not in visited and newState not in inFrontier:
                         heapq.heappush(q, (newPathCost, newState))
+                        inFrontier[newState] = newPathCost
 
                     # Nếu có trong q với PATH-COST cao hơn thì thay thế
-                    
-                    elif self.replaceIfBetter(newState, self.cost(state, newState) + costValue, q):
-                        # Xóa state cũ trong q (tìm và xóa chính xác)
-                        q_temp = []
-                        replaced = False
-                        for cost_item, state_item in q:
-                            ncost = costValue + self.cost(state, newState)
-                            if state_item == newState and cost_item > ncost:
-                                if not replaced:
-                                    q_temp.append((ncost, newState))
-                                    replaced = True
-                            else:
-                                q_temp.append((cost_item, state_item))
-                        q[:] = q_temp  # Cập nhật lại queue
-                        heapq.heapify(q)  # Khôi phục heap property: sắp xếp lại q để đúng theo min-heap
+                    elif newState in inFrontier and newPathCost < inFrontier[newState]:
+                         # LAZY DELETION: Push luôn, không xóa state cũ
+                        heapq.heappush(q, (newPathCost, newState))
+                        inFrontier[newState] = newPathCost
 
             self.root.update()
             time.sleep(0.05)
@@ -643,26 +635,46 @@ class ChessSolver:
         self.stopFlag = False
         visited = set()
         q = []
+        inFrontier = {}  # {state: f_cost} - Track frontier
+        gCosts = {}  # {state: g_cost} - Track path cost
+
 
         # Mặc định ô đầu tiên là (0,0)
         if not self.currentChess:
             self.currentChess.append((0, 0))
-        start = self.currentChess
-        hCost = self.costMahattan(start)
-        heapq.heappush(q, (hCost, start))  # (chi phí, state)
+
+        start = tuple(self.currentChess)
+        gCost = 0
+        hCost = self.costMahattan(start) * 0.5
+        fCost = gCost + hCost
+        
+        heapq.heappush(q, (fCost, start))  # (chi phí, state)
+        inFrontier[start] = fCost
+        gCosts[start] = gCost
 
         while q and not self.stopFlag:
             # Chọn state tiếp theo theo thuật toán
             # Lấy state có cost nhỏ nhất
             costValue, state = heapq.heappop(q)
 
-            self.addLog(f"State {state}, cost: {costValue}")
-            self.updateDisplay(state)
+            # Lazy deletion: bỏ qua duplicate outdated
+            if state not in inFrontier:
+                continue
+            if costValue > inFrontier[state]:
+                continue
 
-            rows = [r for (r, c) in state]
-            cols = [c for (r, c) in state]
+            # Xóa khỏi frontier
+            inFrontier.pop(state)
+            currentGCost = gCosts[state]
+
+            # Trong vòng while:
+            if len(visited) % 100 == 0:
+                print(f"Queue size: {len(q)}, Visited: {len(visited)}, Frontier: {len(inFrontier)}")
+            self.updateDisplay(state)
+            self.addLog(f"State: {state} -- cost: {costValue}")
+
             # Kiểm tra có phải goal state
-            if len(set(rows)) == 8 and len(set(cols)) == 8 and list(state) == self.currentPositions:
+            if list(state) == self.currentPositions:
                 print("---------------------------------------------------------------")
                 print("Found solution:", state, costValue, sep=": ")
                 [print("Visited: ", a) for a in visited]
@@ -670,21 +682,38 @@ class ChessSolver:
                 self.addLog(f"State {state}, cost: {costValue}")
                 return
 
+            if len(state) >= 8:
+                continue
             # Đánh dấu state đã thăm
             visited.add(tuple(state))
 
             # sinh trang thai
+            rows = [r for (r, c) in state]
+            cols = [c for (r, c) in state]
             nextCols = [i for i in range(8) if i not in cols]
-            nextRows = [i for i in range(8) if i not in rows]
+            nextRows = [i for i in range(8) if i not in rows][0:1]
             for i in nextRows:
                 for j in nextCols:
                     newList = list(state) + [(i, j)]
                     newList.sort(key=lambda x: x[0])  # sắp xếp list theo hàng
                     newState = tuple(newList)
+
                     if tuple(newState) not in visited:
-                        currentCost = self.cost(newState) + costValue
-                        newCost = self.costMahattan(newState) + currentCost
-                        heapq.heappush(q, (newCost, newState))
+                        # Tính g(n) = g(parent) + edge_cost
+                        edgeCost = self.cost(state, newState)
+                        newGCost = currentGCost + edgeCost
+                        
+                        # Tính h(n) - heuristic
+                        newHCost = self.costMahattan(newState) * 0.5
+                        
+                        # Tính f(n) = g(n) + h(n)
+                        newFCost = newGCost + newHCost
+                        
+                        # Thêm/update vào frontier
+                        if newState not in inFrontier or newFCost < inFrontier[newState]:
+                            heapq.heappush(q, (newFCost, newState))
+                            inFrontier[newState] = newFCost
+                            gCosts[newState] = newGCost
 
             self.root.update()
             time.sleep(0.05)
@@ -1135,6 +1164,7 @@ class ChessSolver:
     def andOrSearchSolution_DFS(self):
         self.stopFlag = False
         self.visited = set()
+        self.goalFound = False # Dừng update khi đạt goal
 
         # Mặc định bàn cờ trống
         initialState = tuple([])
@@ -1156,6 +1186,18 @@ class ChessSolver:
         # Ít nhất một hành động thành công
         if self.stopFlag:
             return "failure"
+        if self.goalFound:
+            return []
+
+        # Kiểm tra goal state
+        if self.isGoalState(state):
+            print("Goal state found", state)
+            self.addLog(f"Goal state found: {state}")
+            self.goalFound = True
+            # Update display một lần cuối
+            self.updateDisplay(list(state))
+            self.root.update()
+            return []  # empty plan - đã đạt mục tiêu
 
         # Cập nhật display
         print("State: ", state)
@@ -1163,12 +1205,6 @@ class ChessSolver:
         self.updateDisplay(list(state))
         self.root.update()
         time.sleep(0.1)
-
-        # Kiểm tra goal state
-        if self.isGoalState(state):
-            print("Goal state found", state)
-            self.addLog(f"Goal state found: {state}")
-            return []  # empty plan - đã đạt mục tiêu
 
         # Kiểm tra có chu trình (cycle) không
         if state in path:
@@ -1185,9 +1221,9 @@ class ChessSolver:
                 return "failure"
 
             # Thực hiện hành động và lấy tất cả kết quả có thể
-            if self.tt.get == "Recursive AND-OR Tree Search (DFS)":
+            if self.tt.get() == "Recursive AND-OR Tree Search (DFS)":
                 resultStates = self.getResults(state, action)
-            else:
+            elif self.tt.get() == "Recursive AND-OR Tree Search (DFS) -- Non-Deterministic":
                 resultStates = self.getNonDeterministicResults(state, action)
 
             # AND-SEARCH cho tất cả kết quả có thể của hành động này
@@ -1207,6 +1243,8 @@ class ChessSolver:
 
         # Mỗi state trong states phải có plan thành công
         for i, state in enumerate(states):
+            if self.goalFound:
+                break
             plan_i = self.orSearch(state, path)
             if plan_i == "failure":
                 return "failure"  # Nếu bất kỳ state nào fail thì toàn bộ fail
@@ -1741,6 +1779,10 @@ class ChessSolver:
                 if (r, c) != (None, None):
                     if r == rx or c == cx:
                         return False
+                    
+            if x not in self.currentPositions:
+                return False
+            
             return True
 
         def constraintQueens(pos, x):
