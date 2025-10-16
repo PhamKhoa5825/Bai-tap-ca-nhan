@@ -5,6 +5,7 @@ def bfsdfsSolution(self):
 Là hàm tìm kiếm chung cho cả BFS và DFS để tìm đường đi từ trạng thái hiện tại, mở rộng bằng cách đặt thêm một quân vào vị trí hàng-cột trống. Lưu vị trí một ô bằng cặp (row,col).
 + BFS: Duyệt các trạng thái theo chiều rộng, sử dụng hàng đợi (queue) (gọi popleft() để chọn trạng thái tiếp theo)
 + DFS: Duyệt các trạng thái theo chiều sâu, sử dụng stack (gọi pop() để chọn trạng thái tiếp theo), khám phá một nhánh đến cùng trước khi quay lui.
+![gif/bfs.gif](image-url)
 
 -- UCS (Uniform-Cost Search)--
 def ucsSolution(self):
